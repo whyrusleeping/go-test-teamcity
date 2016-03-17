@@ -36,16 +36,12 @@ func main() {
 		additionalTestName += " "
 	}
 
-	reader := bufio.NewReader(input)
+	scan := bufio.NewScanner(input)
 
 	tests := make(map[string]time.Time)
 
-	for {
-		line, err := reader.ReadString('\n')
-
-		if err != nil {
-			break
-		}
+	for scan.Scan() {
+		line := scan.Text()
 
 		tnow := time.Now()
 		now := tnow.Format(TEAMCITY_TIMESTAMP_FORMAT)
@@ -53,15 +49,14 @@ func main() {
 		runOut := run.FindStringSubmatch(line)
 		if runOut != nil {
 			tests[additionalTestName+runOut[1]] = time.Now()
-			fmt.Fprintf(output, "##teamcity[testStarted timestamp='%s' name='%s']\n", now,
-				additionalTestName+runOut[1])
+			fmt.Fprintf(output, "##teamcity[testStarted name='%s']\n", additionalTestName+runOut[1])
 			continue
 		}
 
 		passOut := pass.FindStringSubmatch(line)
 		if passOut != nil {
 			msec := tnow.Sub(tests[additionalTestName+passOut[1]])
-			fmt.Fprintf(output, "##teamcity[testFinished timestamp='%s' name='%s' duration='%d']\n", now,
+			fmt.Fprintf(output, "##teamcity[testFinished name='%s' duration='%d']\n",
 				additionalTestName+passOut[1], int(msec.Seconds()*1000))
 			continue
 		}
@@ -75,8 +70,9 @@ func main() {
 
 		failOut := fail.FindStringSubmatch(line)
 		if failOut != nil {
-			fmt.Fprintf(output, "##teamcity[testFailed timestamp='%s' name='%s']\n", now,
-				additionalTestName+failOut[1])
+			msec := tnow.Sub(tests[additionalTestName+passOut[1]])
+			fmt.Fprintf(output, "##teamcity[testFailed name='%s' duration='%d']\n",
+				additionalTestName+failOut[1], int(msec.Seconds()*1000))
 			continue
 		}
 
