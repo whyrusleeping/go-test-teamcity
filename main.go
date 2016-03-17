@@ -76,6 +76,6 @@ func main() {
 			continue
 		}
 
-		fmt.Fprint(output, line)
+		fmt.Fprintln(output, line)
 	}
 }
